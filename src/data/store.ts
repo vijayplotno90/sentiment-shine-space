@@ -141,7 +141,10 @@ const paymentsStore = createStore(initialPayments);
 
 function useStore<T>(store: ReturnType<typeof createStore<T>>) {
   const [, force] = useState(0);
-  useEffect(() => store.subscribe(() => force((n) => n + 1)), [store]);
+  useEffect(() => {
+    const unsub = store.subscribe(() => force((n) => n + 1));
+    return () => { unsub(); };
+  }, [store]);
   return store.get();
 }
 
