@@ -63,6 +63,16 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      backgroundImage: {
+        "stat-blue": "var(--stat-blue)",
+        "stat-green": "var(--stat-green)",
+        "stat-purple": "var(--stat-purple)",
+        "stat-orange": "var(--stat-orange)",
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        stat: "var(--shadow-stat)",
+      },
       keyframes: {
         "accordion-down": {
           from: {
