@@ -13,11 +13,15 @@ export const ScheduleMeetingDialog = ({ open, onOpenChange, editing }: { open: b
   const clients = useClients();
   const developers = useDevelopers();
   const projects = useProjects();
-  const [form, setForm] = useState(() => editing ?? {
+  const [form, setForm] = useState<{
+    title: string; clientId: string; developerId: string; projectId?: string;
+    date: string; time: string; duration: number;
+    status: "scheduled" | "completed"; priority: "low" | "medium" | "high"; agenda: string; zoom: boolean;
+  }>(() => editing ?? {
     title: "", clientId: clients[0]?.id || "", developerId: developers[0]?.id || "",
-    projectId: undefined as string | undefined,
+    projectId: undefined,
     date: today(), time: "10:00 AM", duration: 60,
-    status: "scheduled" as const, priority: "medium" as const, agenda: "", zoom: true,
+    status: "scheduled", priority: "medium", agenda: "", zoom: true,
   });
 
   const projectsForClient = useMemo(() => projects.filter((p) => p.clientId === form.clientId), [projects, form.clientId]);
