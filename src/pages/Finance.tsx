@@ -7,7 +7,7 @@ import { TrendingUp, FileText, Settings, Plus, Trash2, Mail } from "lucide-react
 import { useInvoices, useExpenses, useDevelopers, useClients, useTaxSettings, updateInvoice, deleteExpense } from "@/data/store";
 import { TaxSettingsDialog } from "@/components/dialogs/TaxSettingsDialog";
 import { AddExpenseDialog } from "@/components/dialogs/AddExpenseDialog";
-import { buildGstZip, downloadBlob } from "@/lib/gstExport";
+import { ExportGstDialog } from "@/components/dialogs/ExportGstDialog";
 import { inr } from "@/lib/format";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
