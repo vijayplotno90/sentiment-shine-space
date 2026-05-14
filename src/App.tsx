@@ -10,6 +10,7 @@ import Developers from "./pages/Developers";
 import Meetings from "./pages/Meetings";
 import Finance from "./pages/Finance";
 import Billing from "./pages/Billing";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/meetings" element={<Meetings />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/finance" element={<Finance />} />
+            <Route path="/reports" element={<Reports />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
