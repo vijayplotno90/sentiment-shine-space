@@ -22,6 +22,8 @@ export type Client = {
   company: string;
   address?: string;
   gstin?: string;
+  pan?: string; // for TDS reconciliation
+  stateCode?: string; // place of supply, e.g. "29-Karnataka"
   technologies: string[];
   progress: number;
   status: "active" | "new";
@@ -91,8 +93,19 @@ export type Payment = {
 export type LineItem = {
   id: string;
   description: string;
+  hsn?: string; // HSN/SAC code (e.g. 998314 for IT consultancy)
   quantity: number;
   rate: number;
+};
+
+export type Receipt = {
+  id: string;
+  invoiceId: string;
+  date: string;
+  amount: number;
+  mode: string; // Bank Transfer, UPI, Cheque, Cash, Card
+  reference?: string; // UTR / cheque no / UPI ref
+  notes?: string;
 };
 
 export type Invoice = {
@@ -108,12 +121,17 @@ export type Invoice = {
   igst: number;
   gstAmount: number;
   total: number;
+  roundOff?: number; // ± paise rounded to nearest rupee
   status: "draft" | "sent" | "paid" | "overdue";
   issueDate: string;
   dueDate: string;
   paidDate?: string;
   notes?: string;
   interstate?: boolean; // IGST vs CGST+SGST
+  placeOfSupply?: string; // state name + code, e.g. "Karnataka (29)"
+  reverseCharge?: boolean; // RCM applicable
+  tdsDeducted?: number; // ₹ TDS deducted by client (reduces net receivable)
+  poNumber?: string; // client purchase order ref
 };
 
 export type ExpenseCategory = "furniture" | "equipment" | "software" | "travel" | "utilities" | "marketing" | "salary" | "other";
@@ -124,6 +142,7 @@ export type Expense = {
   category: ExpenseCategory;
   vendor: string;
   vendorGstin?: string;
+  vendorPan?: string;
   description: string;
   amount: number; // taxable value
   gstAmount: number;
@@ -131,6 +150,10 @@ export type Expense = {
   paymentMethod: string;
   isAsset: boolean;
   assetTag?: string;
+  reverseCharge?: boolean; // RCM — you pay GST on behalf of vendor
+  itcEligible?: boolean; // input tax credit claimable
+  tdsDeducted?: number; // TDS you deducted while paying vendor
+  hsn?: string;
 };
 
 export type CompanyDetails = {
@@ -141,6 +164,14 @@ export type CompanyDetails = {
   email: string;
   phone: string;
   caEmail: string;
+  stateCode?: string; // e.g. "29-Karnataka"
+  businessType?: "Proprietorship" | "Partnership" | "LLP" | "Private Limited" | "Public Limited";
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  ifsc?: string;
+  branch?: string;
+  upiId?: string;
 };
 
 export type TaxSettings = {
