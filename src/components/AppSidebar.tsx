@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle, User } from "lucide-react";
+import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/data/store";
 import { ProfileDialog } from "@/components/dialogs/ProfileDialog";
