@@ -257,23 +257,37 @@ const initialTaxSettings: TaxSettings = {
     email: "billing@lovable.dev",
     phone: "+91 9000000000",
     caEmail: "ca@example.com",
+    stateCode: "29-Karnataka",
+    businessType: "Private Limited",
+    bankName: "HDFC Bank",
+    accountName: "Lovable Consultancy Pvt Ltd",
+    accountNumber: "50200012345678",
+    ifsc: "HDFC0001234",
+    branch: "Koramangala, Bangalore",
+    upiId: "lovable@hdfc",
   },
 };
+
+const initialReceipts: Receipt[] = [
+  { id: "r1", invoiceId: "inv1", date: "2024-10-25", amount: 14160, mode: "Bank Transfer", reference: "UTR1234567890" },
+];
 
 const initialProfile: Profile = { name: "Admin User", email: "admin@lovable.dev", role: "Owner", initials: "AU" };
 
 // ---------------- Persistence ----------------
 
-const KEY = "lov-biz-v2";
+const KEY = "lov-biz-v3";
 
 type DB = {
   clients: Client[]; developers: Developer[]; projects: Project[]; meetings: Meeting[];
-  payments: Payment[]; invoices: Invoice[]; expenses: Expense[]; tax: TaxSettings; profile: Profile;
+  payments: Payment[]; invoices: Invoice[]; expenses: Expense[]; receipts: Receipt[];
+  tax: TaxSettings; profile: Profile;
 };
 
 const defaultDB: DB = {
   clients: initialClients, developers: initialDevelopers, projects: initialProjects, meetings: initialMeetings,
-  payments: initialPayments, invoices: initialInvoices, expenses: initialExpenses, tax: initialTaxSettings, profile: initialProfile,
+  payments: initialPayments, invoices: initialInvoices, expenses: initialExpenses, receipts: initialReceipts,
+  tax: initialTaxSettings, profile: initialProfile,
 };
 
 function loadDB(): DB {
