@@ -63,7 +63,6 @@ export const AppSidebar = () => {
           </button>
           <FooterBtn icon={Settings} label="Settings" onClick={() => setSettingsOpen(true)} />
           <FooterBtn icon={HelpCircle} label="Help & Support" onClick={() => setHelpOpen(true)} />
-          <FooterBtn icon={User} label="Profile" onClick={() => setProfileOpen(true)} />
         </div>
       </aside>
       <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
