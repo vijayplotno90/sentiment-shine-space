@@ -58,7 +58,7 @@ const Finance = () => {
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => setTaxOpen(true)}><Settings className="h-4 w-4" />Tax Settings</Button>
             <Link to="/billing"><Button variant="outline"><FileText className="h-4 w-4" />Generate Invoice</Button></Link>
-            <Button onClick={exportZip}>Export GST</Button>
+            <Button onClick={() => openExport("download")}>Export GST</Button>
           </div>
         } />
 
@@ -162,8 +162,8 @@ const Finance = () => {
             <div className="flex justify-between p-4 rounded-xl bg-secondary/50"><span>Total expenses (taxable)</span><span className="font-bold">{inr(totalExpenses)}</span></div>
             <div className="flex justify-between p-4 rounded-xl bg-secondary/50"><span>Net profit</span><span className="font-bold text-emerald-600">{inr(netProfit)}</span></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-              <Button className="w-full" onClick={exportZip}>Download ZIP for CA</Button>
-              <Button className="w-full" variant="outline" onClick={emailToCa}><Mail className="h-4 w-4" />Email to CA ({tax.company.caEmail || "set in settings"})</Button>
+              <Button className="w-full" onClick={() => openExport("download")}>Download ZIP for CA</Button>
+              <Button className="w-full" variant="outline" onClick={() => openExport("email")}><Mail className="h-4 w-4" />Email to CA ({tax.company.caEmail || "set in settings"})</Button>
             </div>
           </div>
         </TabsContent>
