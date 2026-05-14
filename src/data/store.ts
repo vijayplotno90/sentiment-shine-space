@@ -404,7 +404,41 @@ export const updateInvoice = (id: string, patch: Partial<Invoice>) => {
   db.invoices = db.invoices.map((i) => (i.id === id ? { ...i, ...patch } : i)); commit();
 };
 export const deleteInvoice = (id: string) => {
-  db.invoices = db.invoices.filter((i) => i.id !== id); commit();
+  db.invoices = db.invoices.filter((i) => i.id !== id);
+  db.receipts = db.receipts.filter((r) => r.invoiceId !== id);
+  commit();
+};
+export const duplicateInvoice = (id: string): string | null => {
+  const src = db.invoices.find((i) => i.id === id);
+  if (!src) return null;
+  const number = `INV-${new Date().getFullYear()}-${String(db.invoices.length + 1).padStart(3, "0")}`;
+  const clone: Invoice = {
+    ...src, id: uid(), number,
+    status: "draft",
+    issueDate: new Date().toISOString().slice(0, 10),
+    dueDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+    paidDate: undefined,
+    lineItems: src.lineItems.map((l) => ({ ...l, id: uid() })),
+  };
+  db.invoices = [...db.invoices, clone];
+  commit();
+  return number;
+};
+
+export const addReceipt = (r: Omit<Receipt, "id">) => {
+  db.receipts = [...db.receipts, { ...r, id: uid() }];
+  // mark invoice paid if total receipts >= invoice total
+  const inv = db.invoices.find((i) => i.id === r.invoiceId);
+  if (inv) {
+    const paidSum = db.receipts.filter((x) => x.invoiceId === r.invoiceId).reduce((s, x) => s + x.amount, 0);
+    if (paidSum >= inv.total - (inv.tdsDeducted || 0) - 1) {
+      db.invoices = db.invoices.map((i) => (i.id === r.invoiceId ? { ...i, status: "paid", paidDate: r.date } : i));
+    }
+  }
+  commit();
+};
+export const deleteReceipt = (id: string) => {
+  db.receipts = db.receipts.filter((r) => r.id !== id); commit();
 };
 
 export const addExpense = (e: Omit<Expense, "id">) => {
