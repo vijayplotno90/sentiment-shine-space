@@ -22,6 +22,8 @@ export type Client = {
   company: string;
   address?: string;
   gstin?: string;
+  pan?: string; // for TDS reconciliation
+  stateCode?: string; // place of supply, e.g. "29-Karnataka"
   technologies: string[];
   progress: number;
   status: "active" | "new";
@@ -91,8 +93,19 @@ export type Payment = {
 export type LineItem = {
   id: string;
   description: string;
+  hsn?: string; // HSN/SAC code (e.g. 998314 for IT consultancy)
   quantity: number;
   rate: number;
+};
+
+export type Receipt = {
+  id: string;
+  invoiceId: string;
+  date: string;
+  amount: number;
+  mode: string; // Bank Transfer, UPI, Cheque, Cash, Card
+  reference?: string; // UTR / cheque no / UPI ref
+  notes?: string;
 };
 
 export type Invoice = {
@@ -108,12 +121,17 @@ export type Invoice = {
   igst: number;
   gstAmount: number;
   total: number;
+  roundOff?: number; // ± paise rounded to nearest rupee
   status: "draft" | "sent" | "paid" | "overdue";
   issueDate: string;
   dueDate: string;
   paidDate?: string;
   notes?: string;
   interstate?: boolean; // IGST vs CGST+SGST
+  placeOfSupply?: string; // state name + code, e.g. "Karnataka (29)"
+  reverseCharge?: boolean; // RCM applicable
+  tdsDeducted?: number; // ₹ TDS deducted by client (reduces net receivable)
+  poNumber?: string; // client purchase order ref
 };
 
 export type ExpenseCategory = "furniture" | "equipment" | "software" | "travel" | "utilities" | "marketing" | "salary" | "other";
@@ -124,6 +142,7 @@ export type Expense = {
   category: ExpenseCategory;
   vendor: string;
   vendorGstin?: string;
+  vendorPan?: string;
   description: string;
   amount: number; // taxable value
   gstAmount: number;
@@ -131,6 +150,10 @@ export type Expense = {
   paymentMethod: string;
   isAsset: boolean;
   assetTag?: string;
+  reverseCharge?: boolean; // RCM — you pay GST on behalf of vendor
+  itcEligible?: boolean; // input tax credit claimable
+  tdsDeducted?: number; // TDS you deducted while paying vendor
+  hsn?: string;
 };
 
 export type CompanyDetails = {
@@ -141,6 +164,14 @@ export type CompanyDetails = {
   email: string;
   phone: string;
   caEmail: string;
+  stateCode?: string; // e.g. "29-Karnataka"
+  businessType?: "Proprietorship" | "Partnership" | "LLP" | "Private Limited" | "Public Limited";
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  ifsc?: string;
+  branch?: string;
+  upiId?: string;
 };
 
 export type TaxSettings = {
@@ -226,23 +257,37 @@ const initialTaxSettings: TaxSettings = {
     email: "billing@lovable.dev",
     phone: "+91 9000000000",
     caEmail: "ca@example.com",
+    stateCode: "29-Karnataka",
+    businessType: "Private Limited",
+    bankName: "HDFC Bank",
+    accountName: "Lovable Consultancy Pvt Ltd",
+    accountNumber: "50200012345678",
+    ifsc: "HDFC0001234",
+    branch: "Koramangala, Bangalore",
+    upiId: "lovable@hdfc",
   },
 };
+
+const initialReceipts: Receipt[] = [
+  { id: "r1", invoiceId: "inv1", date: "2024-10-25", amount: 14160, mode: "Bank Transfer", reference: "UTR1234567890" },
+];
 
 const initialProfile: Profile = { name: "Admin User", email: "admin@lovable.dev", role: "Owner", initials: "AU" };
 
 // ---------------- Persistence ----------------
 
-const KEY = "lov-biz-v2";
+const KEY = "lov-biz-v3";
 
 type DB = {
   clients: Client[]; developers: Developer[]; projects: Project[]; meetings: Meeting[];
-  payments: Payment[]; invoices: Invoice[]; expenses: Expense[]; tax: TaxSettings; profile: Profile;
+  payments: Payment[]; invoices: Invoice[]; expenses: Expense[]; receipts: Receipt[];
+  tax: TaxSettings; profile: Profile;
 };
 
 const defaultDB: DB = {
   clients: initialClients, developers: initialDevelopers, projects: initialProjects, meetings: initialMeetings,
-  payments: initialPayments, invoices: initialInvoices, expenses: initialExpenses, tax: initialTaxSettings, profile: initialProfile,
+  payments: initialPayments, invoices: initialInvoices, expenses: initialExpenses, receipts: initialReceipts,
+  tax: initialTaxSettings, profile: initialProfile,
 };
 
 function loadDB(): DB {
@@ -283,6 +328,7 @@ export const useMeetings = () => useSlice("meetings");
 export const usePayments = () => useSlice("payments");
 export const useInvoices = () => useSlice("invoices");
 export const useExpenses = () => useSlice("expenses");
+export const useReceipts = () => useSlice("receipts");
 export const useTaxSettings = () => useSlice("tax");
 export const useProfile = () => useSlice("profile");
 
@@ -358,7 +404,41 @@ export const updateInvoice = (id: string, patch: Partial<Invoice>) => {
   db.invoices = db.invoices.map((i) => (i.id === id ? { ...i, ...patch } : i)); commit();
 };
 export const deleteInvoice = (id: string) => {
-  db.invoices = db.invoices.filter((i) => i.id !== id); commit();
+  db.invoices = db.invoices.filter((i) => i.id !== id);
+  db.receipts = db.receipts.filter((r) => r.invoiceId !== id);
+  commit();
+};
+export const duplicateInvoice = (id: string): string | null => {
+  const src = db.invoices.find((i) => i.id === id);
+  if (!src) return null;
+  const number = `INV-${new Date().getFullYear()}-${String(db.invoices.length + 1).padStart(3, "0")}`;
+  const clone: Invoice = {
+    ...src, id: uid(), number,
+    status: "draft",
+    issueDate: new Date().toISOString().slice(0, 10),
+    dueDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+    paidDate: undefined,
+    lineItems: src.lineItems.map((l) => ({ ...l, id: uid() })),
+  };
+  db.invoices = [...db.invoices, clone];
+  commit();
+  return number;
+};
+
+export const addReceipt = (r: Omit<Receipt, "id">) => {
+  db.receipts = [...db.receipts, { ...r, id: uid() }];
+  // mark invoice paid if total receipts >= invoice total
+  const inv = db.invoices.find((i) => i.id === r.invoiceId);
+  if (inv) {
+    const paidSum = db.receipts.filter((x) => x.invoiceId === r.invoiceId).reduce((s, x) => s + x.amount, 0);
+    if (paidSum >= inv.total - (inv.tdsDeducted || 0) - 1) {
+      db.invoices = db.invoices.map((i) => (i.id === r.invoiceId ? { ...i, status: "paid", paidDate: r.date } : i));
+    }
+  }
+  commit();
+};
+export const deleteReceipt = (id: string) => {
+  db.receipts = db.receipts.filter((r) => r.id !== id); commit();
 };
 
 export const addExpense = (e: Omit<Expense, "id">) => {

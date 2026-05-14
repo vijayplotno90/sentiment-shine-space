@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle } from "lucide-react";
+import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/data/store";
 import { ProfileDialog } from "@/components/dialogs/ProfileDialog";
@@ -15,6 +15,7 @@ const nav = [
   { to: "/meetings", label: "Meetings", icon: Calendar },
   { to: "/billing", label: "Billing", icon: FileText },
   { to: "/finance", label: "Finance", icon: Wallet },
+  { to: "/reports", label: "Reports", icon: BarChart3 },
 ];
 
 export const AppSidebar = () => {
