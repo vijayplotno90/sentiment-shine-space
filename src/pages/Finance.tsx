@@ -171,6 +171,7 @@ const Finance = () => {
 
       <TaxSettingsDialog open={taxOpen} onOpenChange={setTaxOpen} />
       <AddExpenseDialog open={expOpen} onOpenChange={setExpOpen} />
+      <ExportGstDialog open={exportOpen} onOpenChange={setExportOpen} mode={exportMode} onAfterExport={handleAfterExport} />
     </>
   );
 };
