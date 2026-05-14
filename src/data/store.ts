@@ -328,6 +328,7 @@ export const useMeetings = () => useSlice("meetings");
 export const usePayments = () => useSlice("payments");
 export const useInvoices = () => useSlice("invoices");
 export const useExpenses = () => useSlice("expenses");
+export const useReceipts = () => useSlice("receipts");
 export const useTaxSettings = () => useSlice("tax");
 export const useProfile = () => useSlice("profile");
 
