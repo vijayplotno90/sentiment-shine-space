@@ -20,6 +20,8 @@ const Finance = () => {
   const tax = useTaxSettings();
   const [taxOpen, setTaxOpen] = useState(false);
   const [expOpen, setExpOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportMode, setExportMode] = useState<"download" | "email">("download");
 
   const totalRevenue = invoices.reduce((s, i) => s + i.subtotal, 0);
   const paidRevenue = invoices.filter((i) => i.status === "paid").reduce((s, i) => s + i.subtotal, 0);
@@ -31,18 +33,16 @@ const Finance = () => {
   const payouts = developers.reduce((s, d) => s + d.salary, 0);
   const netProfit = paidRevenue - payouts - totalExpenses;
 
-  const exportZip = async () => {
-    toast.info("Generating GST package...");
-    const blob = await buildGstZip({ invoices, expenses, clients, tax, period: new Date().toISOString().slice(0, 7) });
-    downloadBlob(blob, `GST-${new Date().toISOString().slice(0, 10)}.zip`);
-    toast.success("GST package downloaded");
+  const openExport = (mode: "download" | "email") => {
+    if (mode === "email" && !tax.company.caEmail) { toast.error("Add CA email in Settings first"); setTaxOpen(true); return; }
+    setExportMode(mode);
+    setExportOpen(true);
   };
 
-  const emailToCa = async () => {
-    if (!tax.company.caEmail) { toast.error("Add CA email in Settings first"); setTaxOpen(true); return; }
-    await exportZip();
-    const subject = encodeURIComponent(`GST Filing Package — ${new Date().toISOString().slice(0, 7)}`);
-    const body = encodeURIComponent(`Hi,\n\nPlease find the GST filing package for ${tax.company.name} (GSTIN ${tax.company.gstin}). The ZIP includes GSTR-1, GSTR-2 CSVs, summary, and per-invoice PDFs (downloaded to your machine).\n\nRegards,\n${tax.company.name}`);
+  const handleAfterExport = (label: string) => {
+    if (exportMode !== "email") return;
+    const subject = encodeURIComponent(`GST Filing Package — ${label}`);
+    const body = encodeURIComponent(`Hi,\n\nPlease find the GST filing package for ${tax.company.name} (GSTIN ${tax.company.gstin}) for ${label}. The ZIP includes GSTR-1, GSTR-2 CSVs, summary, and per-invoice PDFs (downloaded to your machine — please attach).\n\nRegards,\n${tax.company.name}`);
     window.open(`mailto:${tax.company.caEmail}?subject=${subject}&body=${body}`);
   };
 
