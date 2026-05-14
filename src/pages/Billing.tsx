@@ -4,10 +4,11 @@ import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Eye, Download, Edit, Trash2, Send } from "lucide-react";
-import { useInvoices, useClients, useTaxSettings, deleteInvoice, updateInvoice, type Invoice } from "@/data/store";
+import { Plus, Eye, Download, Edit, Trash2, Send, Copy, Receipt as ReceiptIcon } from "lucide-react";
+import { useInvoices, useClients, useTaxSettings, useReceipts, deleteInvoice, updateInvoice, duplicateInvoice, type Invoice } from "@/data/store";
 import { CreateInvoiceDialog } from "@/components/dialogs/CreateInvoiceDialog";
 import { InvoicePreviewDialog } from "@/components/dialogs/InvoicePreviewDialog";
+import { RecordReceiptDialog } from "@/components/dialogs/RecordReceiptDialog";
 import { generateInvoicePdf } from "@/lib/invoicePdf";
 import { downloadBlob } from "@/lib/gstExport";
 import { inr } from "@/lib/format";
@@ -17,10 +18,12 @@ const Billing = () => {
   const invoices = useInvoices();
   const clients = useClients();
   const tax = useTaxSettings();
+  const receipts = useReceipts();
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Invoice | undefined>();
   const [previewing, setPreviewing] = useState<Invoice | null>(null);
+  const [receiptFor, setReceiptFor] = useState<Invoice | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -104,14 +107,20 @@ const Billing = () => {
                 <Button size="sm" variant="outline" onClick={() => setPreviewing(inv)}><Eye className="h-3.5 w-3.5" />View</Button>
                 <Button size="sm" variant="outline" onClick={() => downloadPdf(inv)}><Download className="h-3.5 w-3.5" />PDF</Button>
                 <Button size="sm" variant="outline" onClick={() => { setEditing(inv); setCreateOpen(true); }}><Edit className="h-3.5 w-3.5" />Edit</Button>
+                <Button size="sm" variant="outline" onClick={() => { const num = duplicateInvoice(inv.id); if (num) toast.success(`Duplicated as ${num}`); }}><Copy className="h-3.5 w-3.5" />Duplicate</Button>
                 {inv.status !== "paid" && (
                   <>
                     <Button size="sm" variant="outline" onClick={() => sendInvoice(inv)}><Send className="h-3.5 w-3.5" />Send</Button>
-                    <Button size="sm" onClick={() => { updateInvoice(inv.id, { status: "paid", paidDate: new Date().toISOString().slice(0, 10) }); toast.success("Marked paid"); }}>Mark Paid</Button>
+                    <Button size="sm" onClick={() => setReceiptFor(inv)}><ReceiptIcon className="h-3.5 w-3.5" />Record Payment</Button>
                   </>
                 )}
                 <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${inv.number}?`)) { deleteInvoice(inv.id); toast.success("Deleted"); } }}><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
+              {receipts.filter((r) => r.invoiceId === inv.id).length > 0 && (
+                <div className="w-full lg:w-auto lg:basis-full text-xs text-muted-foreground border-t pt-2 mt-1">
+                  Receipts: {receipts.filter((r) => r.invoiceId === inv.id).map((r) => `${inr(r.amount)} on ${r.date} via ${r.mode}${r.reference ? ` (${r.reference})` : ""}`).join(" · ")}
+                </div>
+              )}
             </div>
           );
         })}
@@ -119,6 +128,7 @@ const Billing = () => {
 
       <CreateInvoiceDialog open={createOpen} onOpenChange={setCreateOpen} editing={editing} />
       <InvoicePreviewDialog invoice={previewing} open={!!previewing} onOpenChange={(o) => !o && setPreviewing(null)} />
+      <RecordReceiptDialog invoice={receiptFor} open={!!receiptFor} onOpenChange={(o) => !o && setReceiptFor(null)} />
     </>
   );
 };
