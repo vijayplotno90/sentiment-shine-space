@@ -89,21 +89,21 @@ const Billing = () => {
         {filtered.map((inv) => {
           const c = clients.find((cl) => cl.id === inv.clientId);
           return (
-            <div key={inv.id} className="p-5 flex flex-col lg:flex-row lg:items-center gap-4">
-              <div className="flex-1 min-w-0">
+            <div key={inv.id} className="p-5 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center gap-4">
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-bold">{inv.number}</span>
                   <Badge className={`${statusColor(inv.status)} border-0 capitalize`}>{inv.status}</Badge>
                   {inv.interstate && <Badge variant="outline">Inter-state</Badge>}
                 </div>
-                <div className="text-sm mt-1">{c?.name} — <span className="text-muted-foreground">{c?.company}</span></div>
+                <div className="text-sm mt-1 truncate">{c?.name} — <span className="text-muted-foreground">{c?.company}</span></div>
                 <div className="text-xs text-muted-foreground">Issued {inv.issueDate} • Due {inv.dueDate}</div>
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-emerald-600">{inr(inv.total)}</div>
-                <div className="text-xs text-muted-foreground">Subtotal {inr(inv.subtotal)} + GST {inr(inv.gstAmount)}</div>
+              <div className="lg:text-right">
+                <div className="text-2xl font-bold text-emerald-600 whitespace-nowrap">{inr(inv.total)}</div>
+                <div className="text-xs text-muted-foreground whitespace-nowrap">Subtotal {inr(inv.subtotal)} + GST {inr(inv.gstAmount)}</div>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 lg:justify-end">
                 <Button size="sm" variant="outline" onClick={() => setPreviewing(inv)}><Eye className="h-3.5 w-3.5" />View</Button>
                 <Button size="sm" variant="outline" onClick={() => downloadPdf(inv)}><Download className="h-3.5 w-3.5" />PDF</Button>
                 <Button size="sm" variant="outline" onClick={() => { setEditing(inv); setCreateOpen(true); }}><Edit className="h-3.5 w-3.5" />Edit</Button>
@@ -117,7 +117,7 @@ const Billing = () => {
                 <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${inv.number}?`)) { deleteInvoice(inv.id); toast.success("Deleted"); } }}><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
               {receipts.filter((r) => r.invoiceId === inv.id).length > 0 && (
-                <div className="w-full lg:w-auto lg:basis-full text-xs text-muted-foreground border-t pt-2 mt-1">
+                <div className="lg:col-span-3 text-xs text-muted-foreground border-t pt-2">
                   Receipts: {receipts.filter((r) => r.invoiceId === inv.id).map((r) => `${inr(r.amount)} on ${r.date} via ${r.mode}${r.reference ? ` (${r.reference})` : ""}`).join(" · ")}
                 </div>
               )}
