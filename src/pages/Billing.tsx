@@ -117,7 +117,7 @@ const Billing = () => {
                 <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${inv.number}?`)) { deleteInvoice(inv.id); toast.success("Deleted"); } }}><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
               {receipts.filter((r) => r.invoiceId === inv.id).length > 0 && (
-                <div className="w-full lg:w-auto lg:basis-full text-xs text-muted-foreground border-t pt-2 mt-1">
+                <div className="lg:col-span-3 text-xs text-muted-foreground border-t pt-2">
                   Receipts: {receipts.filter((r) => r.invoiceId === inv.id).map((r) => `${inr(r.amount)} on ${r.date} via ${r.mode}${r.reference ? ` (${r.reference})` : ""}`).join(" · ")}
                 </div>
               )}
