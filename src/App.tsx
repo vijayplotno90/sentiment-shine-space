@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { RoleRoute } from "@/components/RoleRoute";
 import AppLayout from "./layouts/AppLayout";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
@@ -14,6 +15,7 @@ import Meetings from "./pages/Meetings";
 import Finance from "./pages/Finance";
 import Billing from "./pages/Billing";
 import Reports from "./pages/Reports";
+import Team from "./pages/Team";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
