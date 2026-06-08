@@ -91,8 +91,8 @@ const Finance = () => {
                 </div>
                 <div className="text-right"><div className="text-2xl font-bold text-emerald-600">{inr(inv.total)}</div><div className="text-xs text-muted-foreground">GST {inr(inv.gstAmount)}</div></div>
                 <div className="flex gap-2">
-                  {inv.status !== "paid" && <Button size="sm" variant="outline" onClick={() => toast.success("Reminder sent")}>Send Reminder</Button>}
-                  {inv.status !== "paid" && <Button size="sm" onClick={() => { updateInvoice(inv.id, { status: "paid", paidDate: new Date().toISOString().slice(0, 10) }); toast.success("Marked paid"); }}>Mark Paid</Button>}
+                  {canWrite && inv.status !== "paid" && <Button size="sm" variant="outline" onClick={() => toast.success("Reminder sent")}>Send Reminder</Button>}
+                  {canWrite && inv.status !== "paid" && <Button size="sm" onClick={() => { updateInvoice(inv.id, { status: "paid", paidDate: new Date().toISOString().slice(0, 10) }); toast.success("Marked paid"); }}>Mark Paid</Button>}
                 </div>
               </div>
             );
