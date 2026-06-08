@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle, BarChart3, LogOut } from "lucide-react";
+import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle, BarChart3, LogOut, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useProfile } from "@/data/store";
+import { useProfile, useOrgRole, canAccessTab, isOwner } from "@/data/store";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ProfileDialog } from "@/components/dialogs/ProfileDialog";
@@ -19,6 +19,7 @@ const nav = [
   { to: "/billing", label: "Billing", icon: FileText },
   { to: "/finance", label: "Finance", icon: Wallet },
   { to: "/reports", label: "Reports", icon: BarChart3 },
+  { to: "/team", label: "Team & Access", icon: Shield },
 ];
 
 export const AppSidebar = () => {
