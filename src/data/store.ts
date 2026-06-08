@@ -481,6 +481,22 @@ export const useReceipts = () => useSlice("receipts");
 export const useTaxSettings = () => useSlice("tax");
 export const useProfile = () => useSlice("profile");
 
+// Role / membership reactive hooks (re-render on commit)
+function useReactive<T>(get: () => T): T {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const fn = () => force((n) => n + 1);
+    listeners.add(fn);
+    return () => { listeners.delete(fn); };
+  }, []);
+  return get();
+}
+export const useRole = () => useReactive(() => currentRole);
+export const useCanWrite = () => useReactive(() => canWrite());
+export const useMembershipStatus = () => useReactive(() => membershipStatus);
+export const getRole = () => currentRole;
+export const getOrgId = () => currentOrgId;
+
 // ---------------- Mutations ----------------
 
 export const addClient = (c: Omit<Client, "id" | "progress" | "status">) => {
