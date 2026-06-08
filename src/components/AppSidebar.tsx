@@ -77,7 +77,8 @@ export const AppSidebar = () => {
             <div className="h-9 w-9 rounded-full bg-primary text-primary-foreground grid place-items-center text-sm font-bold">{profile.initials}</div>
             <div className="text-left flex-1 min-w-0">
               <div className="font-semibold text-sm truncate">{profile.name}</div>
-              <div className="text-xs text-muted-foreground truncate">{profile.role}</div>
+              <div className="text-xs text-muted-foreground truncate">{role ? roleLabel[role] : profile.role}</div>
+
             </div>
           </button>
           <FooterBtn icon={Settings} label="Settings" onClick={() => setSettingsOpen(true)} />
