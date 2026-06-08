@@ -25,7 +25,7 @@ const nav = [
 export const AppSidebar = () => {
   const navigate = useNavigate();
   const profile = useProfile();
-  const role = useOrgRole();
+  useOrgRole(); // subscribe so nav re-filters when the role loads
   const [profileOpen, setProfileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
