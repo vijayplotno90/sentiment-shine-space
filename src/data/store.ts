@@ -493,6 +493,12 @@ export const useOrgRole = (): OrgRole | null => {
   return currentRole;
 };
 
+// True for owner/admin, false for read-only ca. Re-renders when the role loads.
+export const useCanWrite = (): boolean => {
+  const role = useOrgRole();
+  return role === "owner" || role === "admin" || role === null;
+};
+
 // ---------------- Mutations ----------------
 
 export const addClient = (c: Omit<Client, "id" | "progress" | "status">) => {
