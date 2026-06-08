@@ -107,15 +107,15 @@ const Billing = () => {
               <div className="flex flex-wrap gap-2 lg:justify-end">
                 <Button size="sm" variant="outline" onClick={() => setPreviewing(inv)}><Eye className="h-3.5 w-3.5" />View</Button>
                 <Button size="sm" variant="outline" onClick={() => downloadPdf(inv)}><Download className="h-3.5 w-3.5" />PDF</Button>
-                <Button size="sm" variant="outline" onClick={() => { setEditing(inv); setCreateOpen(true); }}><Edit className="h-3.5 w-3.5" />Edit</Button>
-                <Button size="sm" variant="outline" onClick={() => { const num = duplicateInvoice(inv.id); if (num) toast.success(`Duplicated as ${num}`); }}><Copy className="h-3.5 w-3.5" />Duplicate</Button>
-                {inv.status !== "paid" && (
+                {canWrite && <Button size="sm" variant="outline" onClick={() => { setEditing(inv); setCreateOpen(true); }}><Edit className="h-3.5 w-3.5" />Edit</Button>}
+                {canWrite && <Button size="sm" variant="outline" onClick={() => { const num = duplicateInvoice(inv.id); if (num) toast.success(`Duplicated as ${num}`); }}><Copy className="h-3.5 w-3.5" />Duplicate</Button>}
+                {canWrite && inv.status !== "paid" && (
                   <>
                     <Button size="sm" variant="outline" onClick={() => sendInvoice(inv)}><Send className="h-3.5 w-3.5" />Send</Button>
                     <Button size="sm" onClick={() => setReceiptFor(inv)}><ReceiptIcon className="h-3.5 w-3.5" />Record Payment</Button>
                   </>
                 )}
-                <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${inv.number}?`)) { deleteInvoice(inv.id); toast.success("Deleted"); } }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                {canWrite && <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${inv.number}?`)) { deleteInvoice(inv.id); toast.success("Deleted"); } }}><Trash2 className="h-3.5 w-3.5" /></Button>}
               </div>
               {receipts.filter((r) => r.invoiceId === inv.id).length > 0 && (
                 <div className="lg:col-span-3 text-xs text-muted-foreground border-t pt-2">
