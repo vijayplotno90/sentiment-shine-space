@@ -18,6 +18,7 @@ const Finance = () => {
   const developers = useDevelopers();
   const clients = useClients();
   const tax = useTaxSettings();
+  const canWrite = useCanWrite();
   const [taxOpen, setTaxOpen] = useState(false);
   const [expOpen, setExpOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
