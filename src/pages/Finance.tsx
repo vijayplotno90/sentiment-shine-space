@@ -121,7 +121,7 @@ const Finance = () => {
                 </div>
               ))}
             </div>
-            <Button onClick={() => setExpOpen(true)} className="ml-3"><Plus className="h-4 w-4" />Add Expense</Button>
+            {canWrite && <Button onClick={() => setExpOpen(true)} className="ml-3"><Plus className="h-4 w-4" />Add Expense</Button>}
           </div>
           <div className="bg-card rounded-2xl shadow-card divide-y">
             {expenses.map((e) => (
