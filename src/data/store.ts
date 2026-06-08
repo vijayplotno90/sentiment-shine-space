@@ -654,8 +654,8 @@ export const updateTaxSettings = (patch: Partial<TaxSettings> & { company?: Part
   db.tax = { ...db.tax, ...patch, company: { ...db.tax.company, ...(patch.company || {}) } };
   commit();
   persist(supabase.from("tax_settings").upsert({
-    organization_id: currentOrgId,
-    user_id: currentUserId,
+    organization_id: currentOrgId ?? undefined,
+    user_id: currentUserId ?? undefined,
     gst_rate: db.tax.gstRate, cgst_rate: db.tax.cgstRate, sgst_rate: db.tax.sgstRate, igst_rate: db.tax.igstRate, tds_rate: db.tax.tdsRate,
     company: db.tax.company as any,
   }, { onConflict: "organization_id" }));
