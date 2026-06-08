@@ -19,6 +19,7 @@ const Billing = () => {
   const clients = useClients();
   const tax = useTaxSettings();
   const receipts = useReceipts();
+  const canWrite = useCanWrite();
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Invoice | undefined>();
