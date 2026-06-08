@@ -272,12 +272,20 @@ const emptyDB = (): DB => ({
   tax: defaultTax, profile: { name: "User", email: "", role: "Owner", initials: "U" },
 });
 
+export type Role = "owner" | "admin" | "ca";
+export type MembershipStatus = "active" | "none" | "unknown";
+
 let db: DB = emptyDB();
 let loaded = false;
 let currentUserId: string | null = null;
+let currentOrgId: string | null = null;
+let currentRole: Role | null = null;
+let membershipStatus: MembershipStatus = "unknown";
 const listeners = new Set<() => void>();
 
 function commit() { listeners.forEach((l) => l()); }
+
+export const canWrite = () => currentRole === "owner" || currentRole === "admin";
 
 function useSlice<K extends keyof DB>(key: K): DB[K] {
   const [, force] = useState(0);
