@@ -392,7 +392,9 @@ export async function loadStore(): Promise<void> {
   ]);
 
   const noData = !(clientsR.data?.length || devsR.data?.length || invsR.data?.length || expsR.data?.length);
-  if (noData) {
+  // Only seed demo data for managers (owner/admin). Read-only members (ca) joining a
+  // brand-new org must never trigger writes — they simply see an empty workspace.
+  if (noData && canWrite()) {
     await seedDemoData();
     return loadStore();
   }
