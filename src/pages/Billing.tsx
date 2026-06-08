@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Eye, Download, Edit, Trash2, Send, Copy, Receipt as ReceiptIcon } from "lucide-react";
-import { useInvoices, useClients, useTaxSettings, useReceipts, useCanWrite, deleteInvoice, updateInvoice, duplicateInvoice, type Invoice } from "@/data/store";
+import { useInvoices, useClients, useTaxSettings, useReceipts, deleteInvoice, updateInvoice, duplicateInvoice, type Invoice } from "@/data/store";
 import { CreateInvoiceDialog } from "@/components/dialogs/CreateInvoiceDialog";
 import { InvoicePreviewDialog } from "@/components/dialogs/InvoicePreviewDialog";
 import { RecordReceiptDialog } from "@/components/dialogs/RecordReceiptDialog";
@@ -19,7 +19,6 @@ const Billing = () => {
   const clients = useClients();
   const tax = useTaxSettings();
   const receipts = useReceipts();
-  const canWrite = useCanWrite();
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Invoice | undefined>();
@@ -70,10 +69,9 @@ const Billing = () => {
     <>
       <PageHeader
         title="Billing"
-        subtitle={canWrite ? "Generate, send, and manage tax invoices for your clients" : "View and download tax invoices (read-only)"}
-        action={canWrite ? <Button onClick={() => { setEditing(undefined); setCreateOpen(true); }}><Plus className="h-4 w-4" /> Create Invoice</Button> : undefined}
+        subtitle="Generate, send, and manage tax invoices for your clients"
+        action={<Button onClick={() => { setEditing(undefined); setCreateOpen(true); }}><Plus className="h-4 w-4" /> Create Invoice</Button>}
       />
-
 
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard value={String(totals.total)} label="Total Invoices" variant="blue" />
@@ -87,7 +85,7 @@ const Billing = () => {
       </section>
 
       <section className="bg-card rounded-2xl shadow-card divide-y">
-        {filtered.length === 0 && <div className="p-8 text-center text-muted-foreground">{canWrite ? "No invoices yet — click Create Invoice to get started." : "No invoices to show yet."}</div>}
+        {filtered.length === 0 && <div className="p-8 text-center text-muted-foreground">No invoices yet — click Create Invoice to get started.</div>}
         {filtered.map((inv) => {
           const c = clients.find((cl) => cl.id === inv.clientId);
           return (
@@ -108,16 +106,15 @@ const Billing = () => {
               <div className="flex flex-wrap gap-2 lg:justify-end">
                 <Button size="sm" variant="outline" onClick={() => setPreviewing(inv)}><Eye className="h-3.5 w-3.5" />View</Button>
                 <Button size="sm" variant="outline" onClick={() => downloadPdf(inv)}><Download className="h-3.5 w-3.5" />PDF</Button>
-                {canWrite && <Button size="sm" variant="outline" onClick={() => { setEditing(inv); setCreateOpen(true); }}><Edit className="h-3.5 w-3.5" />Edit</Button>}
-                {canWrite && <Button size="sm" variant="outline" onClick={() => { const num = duplicateInvoice(inv.id); if (num) toast.success(`Duplicated as ${num}`); }}><Copy className="h-3.5 w-3.5" />Duplicate</Button>}
-                {canWrite && inv.status !== "paid" && (
+                <Button size="sm" variant="outline" onClick={() => { setEditing(inv); setCreateOpen(true); }}><Edit className="h-3.5 w-3.5" />Edit</Button>
+                <Button size="sm" variant="outline" onClick={() => { const num = duplicateInvoice(inv.id); if (num) toast.success(`Duplicated as ${num}`); }}><Copy className="h-3.5 w-3.5" />Duplicate</Button>
+                {inv.status !== "paid" && (
                   <>
                     <Button size="sm" variant="outline" onClick={() => sendInvoice(inv)}><Send className="h-3.5 w-3.5" />Send</Button>
                     <Button size="sm" onClick={() => setReceiptFor(inv)}><ReceiptIcon className="h-3.5 w-3.5" />Record Payment</Button>
                   </>
                 )}
-                {canWrite && <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${inv.number}?`)) { deleteInvoice(inv.id); toast.success("Deleted"); } }}><Trash2 className="h-3.5 w-3.5" /></Button>}
-
+                <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${inv.number}?`)) { deleteInvoice(inv.id); toast.success("Deleted"); } }}><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
               {receipts.filter((r) => r.invoiceId === inv.id).length > 0 && (
                 <div className="lg:col-span-3 text-xs text-muted-foreground border-t pt-2">
