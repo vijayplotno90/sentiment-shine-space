@@ -87,7 +87,7 @@ const Billing = () => {
       </section>
 
       <section className="bg-card rounded-2xl shadow-card divide-y">
-        {filtered.length === 0 && <div className="p-8 text-center text-muted-foreground">No invoices yet — click Create Invoice to get started.</div>}
+        {filtered.length === 0 && <div className="p-8 text-center text-muted-foreground">{canWrite ? "No invoices yet — click Create Invoice to get started." : "No invoices to show yet."}</div>}
         {filtered.map((inv) => {
           const c = clients.find((cl) => cl.id === inv.clientId);
           return (
