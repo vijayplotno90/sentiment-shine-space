@@ -459,10 +459,10 @@ async function seedDemoData(): Promise<void> {
 }
 
 export async function resetAll(): Promise<void> {
-  if (!currentUserId) return;
+  if (!currentOrgId || currentRole !== "owner") return;
   const tables = ["receipts", "invoice_line_items", "invoices", "meetings", "projects", "expenses", "payments", "developers", "clients", "tax_settings"] as const;
   for (const t of tables) {
-    await supabase.from(t).delete().eq("user_id", currentUserId);
+    await supabase.from(t).delete().eq("organization_id", currentOrgId);
   }
   await seedDemoData();
   await loadStore();
