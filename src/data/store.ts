@@ -482,6 +482,17 @@ export const useReceipts = () => useSlice("receipts");
 export const useTaxSettings = () => useSlice("tax");
 export const useProfile = () => useSlice("profile");
 
+// Re-renders when role/org/membership state changes (commit() fires the listeners).
+export const useOrgRole = (): OrgRole | null => {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const fn = () => force((n) => n + 1);
+    listeners.add(fn);
+    return () => { listeners.delete(fn); };
+  }, []);
+  return currentRole;
+};
+
 // ---------------- Mutations ----------------
 
 export const addClient = (c: Omit<Client, "id" | "progress" | "status">) => {
