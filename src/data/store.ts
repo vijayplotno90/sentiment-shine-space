@@ -272,12 +272,20 @@ const emptyDB = (): DB => ({
   tax: defaultTax, profile: { name: "User", email: "", role: "Owner", initials: "U" },
 });
 
+export type Role = "owner" | "admin" | "ca";
+export type MembershipStatus = "active" | "none" | "unknown";
+
 let db: DB = emptyDB();
 let loaded = false;
 let currentUserId: string | null = null;
+let currentOrgId: string | null = null;
+let currentRole: Role | null = null;
+let membershipStatus: MembershipStatus = "unknown";
 const listeners = new Set<() => void>();
 
 function commit() { listeners.forEach((l) => l()); }
+
+export const canWrite = () => currentRole === "owner" || currentRole === "admin";
 
 function useSlice<K extends keyof DB>(key: K): DB[K] {
   const [, force] = useState(0);
@@ -341,8 +349,31 @@ const payFromRow = (r: Row): Payment => ({ id: r.id as string, invoice: (r.invoi
 export async function loadStore(): Promise<void> {
   const { data: auth } = await supabase.auth.getUser();
   const user = auth?.user;
-  if (!user) { db = emptyDB(); loaded = false; currentUserId = null; commit(); return; }
+  if (!user) { db = emptyDB(); loaded = false; currentUserId = null; currentOrgId = null; currentRole = null; membershipStatus = "unknown"; commit(); return; }
   currentUserId = user.id;
+
+  // Accept any pending invitations for this email (links existing users to their org).
+  await supabase.rpc("accept_pending_invitations");
+
+  // Resolve organization membership + role.
+  const { data: mem } = await supabase
+    .from("organization_members")
+    .select("organization_id, role, status")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .order("created_at")
+    .limit(1)
+    .maybeSingle();
+
+  if (!mem) {
+    // User has no active membership (removed/deactivated). Block access.
+    currentOrgId = null; currentRole = null; membershipStatus = "none";
+    db = emptyDB(); loaded = true; commit();
+    return;
+  }
+  currentOrgId = mem.organization_id as string;
+  currentRole = mem.role as Role;
+  membershipStatus = "active";
 
   const [clientsR, devsR, projsR, meetsR, invsR, linesR, recsR, expsR, paysR, taxR, profR] = await Promise.all([
     supabase.from("clients").select("*").order("created_at"),
@@ -354,15 +385,17 @@ export async function loadStore(): Promise<void> {
     supabase.from("receipts").select("*").order("created_at"),
     supabase.from("expenses").select("*").order("created_at"),
     supabase.from("payments").select("*").order("created_at"),
-    supabase.from("tax_settings").select("*").maybeSingle(),
+    supabase.from("tax_settings").select("*").limit(1).maybeSingle(),
     supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
   ]);
 
+  // Only an owner seeds a brand-new empty organization.
   const noData = !(clientsR.data?.length || devsR.data?.length || invsR.data?.length || expsR.data?.length);
-  if (noData) {
+  if (noData && currentRole === "owner") {
     await seedDemoData();
     return loadStore();
   }
+
 
   const lines = (linesR.data || []) as Row[];
   db.clients = (clientsR.data || []).map(clientFromRow as (r: Row) => Client);
@@ -395,6 +428,9 @@ export function clearStore() {
   db = emptyDB();
   loaded = false;
   currentUserId = null;
+  currentOrgId = null;
+  currentRole = null;
+  membershipStatus = "unknown";
   commit();
 }
 
@@ -423,10 +459,10 @@ async function seedDemoData(): Promise<void> {
 }
 
 export async function resetAll(): Promise<void> {
-  if (!currentUserId) return;
+  if (!currentOrgId || currentRole !== "owner") return;
   const tables = ["receipts", "invoice_line_items", "invoices", "meetings", "projects", "expenses", "payments", "developers", "clients", "tax_settings"] as const;
   for (const t of tables) {
-    await supabase.from(t).delete().eq("user_id", currentUserId);
+    await supabase.from(t).delete().eq("organization_id", currentOrgId);
   }
   await seedDemoData();
   await loadStore();
@@ -444,6 +480,22 @@ export const useExpenses = () => useSlice("expenses");
 export const useReceipts = () => useSlice("receipts");
 export const useTaxSettings = () => useSlice("tax");
 export const useProfile = () => useSlice("profile");
+
+// Role / membership reactive hooks (re-render on commit)
+function useReactive<T>(get: () => T): T {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const fn = () => force((n) => n + 1);
+    listeners.add(fn);
+    return () => { listeners.delete(fn); };
+  }, []);
+  return get();
+}
+export const useRole = () => useReactive(() => currentRole);
+export const useCanWrite = () => useReactive(() => canWrite());
+export const useMembershipStatus = () => useReactive(() => membershipStatus);
+export const getRole = () => currentRole;
+export const getOrgId = () => currentOrgId;
 
 // ---------------- Mutations ----------------
 
@@ -602,10 +654,11 @@ export const updateTaxSettings = (patch: Partial<TaxSettings> & { company?: Part
   db.tax = { ...db.tax, ...patch, company: { ...db.tax.company, ...(patch.company || {}) } };
   commit();
   persist(supabase.from("tax_settings").upsert({
-    user_id: currentUserId,
+    organization_id: currentOrgId ?? undefined,
+    user_id: currentUserId ?? undefined,
     gst_rate: db.tax.gstRate, cgst_rate: db.tax.cgstRate, sgst_rate: db.tax.sgstRate, igst_rate: db.tax.igstRate, tds_rate: db.tax.tdsRate,
     company: db.tax.company as any,
-  }, { onConflict: "user_id" }));
+  }, { onConflict: "organization_id" }));
 };
 export const updateProfile = (patch: Partial<Profile>) => {
   db.profile = { ...db.profile, ...patch };
@@ -623,3 +676,71 @@ export const projectsForClient = (clientId: string) => db.projects.filter((p) =>
 export const projectsForDeveloper = (devId: string) => db.projects.filter((p) => p.assignedDeveloperId === devId);
 export const meetingsForClient = (clientId: string) => db.meetings.filter((m) => m.clientId === clientId);
 export const invoicesForClient = (clientId: string) => db.invoices.filter((i) => i.clientId === clientId);
+
+// ---------------- Team management (owner only enforced by RLS) ----------------
+
+export type Member = { id: string; userId: string; email: string; role: Role; status: "active" | "inactive"; name?: string; isYou?: boolean };
+export type Invitation = { id: string; email: string; role: Role; status: string; createdAt?: string };
+
+export async function fetchTeam(): Promise<{ members: Member[]; invitations: Invitation[] }> {
+  if (!currentOrgId) return { members: [], invitations: [] };
+  const [memR, invR] = await Promise.all([
+    supabase.from("organization_members").select("id, user_id, email, role, status, created_at").eq("organization_id", currentOrgId).order("created_at"),
+    supabase.from("organization_invitations").select("id, email, role, status, created_at").eq("organization_id", currentOrgId).eq("status", "pending").order("created_at"),
+  ]);
+  const memberRows = (memR.data || []) as Row[];
+  const userIds = memberRows.map((m) => m.user_id as string);
+  let names: Record<string, string> = {};
+  if (userIds.length) {
+    const { data: profs } = await supabase.from("profiles").select("user_id, name").in("user_id", userIds);
+    (profs || []).forEach((p: any) => { names[p.user_id] = p.name; });
+  }
+  const members: Member[] = memberRows.map((m) => ({
+    id: m.id as string,
+    userId: m.user_id as string,
+    email: (m.email as string) || "",
+    role: m.role as Role,
+    status: (m.status as Member["status"]) || "active",
+    name: names[m.user_id as string],
+    isYou: (m.user_id as string) === currentUserId,
+  }));
+  const invitations: Invitation[] = ((invR.data || []) as Row[]).map((i) => ({
+    id: i.id as string,
+    email: i.email as string,
+    role: i.role as Role,
+    status: i.status as string,
+    createdAt: i.created_at as string,
+  }));
+  return { members, invitations };
+}
+
+export async function inviteMember(email: string, role: Role): Promise<{ error?: string }> {
+  if (!currentOrgId) return { error: "No organization" };
+  const clean = email.trim().toLowerCase();
+  // If they already have an account and were a member before, just reactivate.
+  const { error } = await supabase.from("organization_invitations").upsert(
+    { organization_id: currentOrgId, email: clean, role, status: "pending", invited_by: currentUserId },
+    { onConflict: "organization_id,email" }
+  );
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function setMemberStatus(memberId: string, status: "active" | "inactive"): Promise<{ error?: string }> {
+  const { error } = await supabase.from("organization_members").update({ status }).eq("id", memberId);
+  return error ? { error: error.message } : {};
+}
+
+export async function updateMemberRole(memberId: string, role: Role): Promise<{ error?: string }> {
+  const { error } = await supabase.from("organization_members").update({ role }).eq("id", memberId);
+  return error ? { error: error.message } : {};
+}
+
+export async function revokeInvitation(id: string): Promise<{ error?: string }> {
+  const { error } = await supabase.from("organization_invitations").delete().eq("id", id);
+  return error ? { error: error.message } : {};
+}
+
+export async function reinviteFromEmail(email: string, role: Role): Promise<{ error?: string }> {
+  return inviteMember(email, role);
+}

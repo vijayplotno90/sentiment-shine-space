@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle, BarChart3, LogOut } from "lucide-react";
+import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle, BarChart3, LogOut, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useProfile } from "@/data/store";
+import { useProfile, useRole, type Role } from "@/data/store";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ProfileDialog } from "@/components/dialogs/ProfileDialog";
@@ -10,24 +10,31 @@ import { SettingsDialog } from "@/components/dialogs/SettingsDialog";
 import { HelpDialog } from "@/components/dialogs/HelpDialog";
 import { TaxSettingsDialog } from "@/components/dialogs/TaxSettingsDialog";
 
+type NavItem = { to: string; label: string; icon: typeof Home; end?: boolean; roles?: Role[] };
 
-const nav = [
-  { to: "/", label: "Dashboard", icon: Home, end: true },
-  { to: "/clients", label: "Clients", icon: Users },
-  { to: "/developers", label: "Developers", icon: Code2 },
-  { to: "/meetings", label: "Meetings", icon: Calendar },
-  { to: "/billing", label: "Billing", icon: FileText },
-  { to: "/finance", label: "Finance", icon: Wallet },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
+const nav: NavItem[] = [
+  { to: "/", label: "Dashboard", icon: Home, end: true, roles: ["owner", "admin"] },
+  { to: "/clients", label: "Clients", icon: Users, roles: ["owner", "admin"] },
+  { to: "/developers", label: "Developers", icon: Code2, roles: ["owner", "admin"] },
+  { to: "/meetings", label: "Meetings", icon: Calendar, roles: ["owner", "admin"] },
+  { to: "/billing", label: "Billing", icon: FileText, roles: ["owner", "admin", "ca"] },
+  { to: "/finance", label: "Finance", icon: Wallet, roles: ["owner", "admin"] },
+  { to: "/reports", label: "Reports", icon: BarChart3, roles: ["owner", "admin"] },
+  { to: "/team", label: "Team", icon: Shield, roles: ["owner"] },
 ];
+
+const roleLabel: Record<Role, string> = { owner: "Owner", admin: "Admin", ca: "CA (read-only)" };
 
 export const AppSidebar = () => {
   const navigate = useNavigate();
   const profile = useProfile();
+  const role = useRole();
+  const visibleNav = nav.filter((item) => !item.roles || (role && item.roles.includes(role)));
   const [profileOpen, setProfileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [taxOpen, setTaxOpen] = useState(false);
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -53,7 +60,7 @@ export const AppSidebar = () => {
           </div>
         </div>
         <nav className="flex-1 px-3 py-2 space-y-1">
-          {nav.map((item) => {
+          {visibleNav.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink key={item.to} to={item.to} end={item.end}
@@ -70,7 +77,8 @@ export const AppSidebar = () => {
             <div className="h-9 w-9 rounded-full bg-primary text-primary-foreground grid place-items-center text-sm font-bold">{profile.initials}</div>
             <div className="text-left flex-1 min-w-0">
               <div className="font-semibold text-sm truncate">{profile.name}</div>
-              <div className="text-xs text-muted-foreground truncate">{profile.role}</div>
+              <div className="text-xs text-muted-foreground truncate">{role ? roleLabel[role] : profile.role}</div>
+
             </div>
           </button>
           <FooterBtn icon={Settings} label="Settings" onClick={() => setSettingsOpen(true)} />
