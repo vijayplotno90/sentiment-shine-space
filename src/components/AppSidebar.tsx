@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
-import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle, BarChart3 } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle, BarChart3, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/data/store";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { ProfileDialog } from "@/components/dialogs/ProfileDialog";
 import { SettingsDialog } from "@/components/dialogs/SettingsDialog";
 import { HelpDialog } from "@/components/dialogs/HelpDialog";
 import { TaxSettingsDialog } from "@/components/dialogs/TaxSettingsDialog";
+
 
 const nav = [
   { to: "/", label: "Dashboard", icon: Home, end: true },
@@ -19,11 +22,19 @@ const nav = [
 ];
 
 export const AppSidebar = () => {
+  const navigate = useNavigate();
   const profile = useProfile();
   const [profileOpen, setProfileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [taxOpen, setTaxOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Signed out");
+    navigate("/auth", { replace: true });
+  };
+
 
   const FooterBtn = ({ icon: Icon, label, onClick }: { icon: typeof Settings; label: string; onClick: () => void }) => (
     <button onClick={onClick} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors text-sidebar-foreground hover:bg-sidebar-accent/50">
@@ -64,8 +75,10 @@ export const AppSidebar = () => {
           </button>
           <FooterBtn icon={Settings} label="Settings" onClick={() => setSettingsOpen(true)} />
           <FooterBtn icon={HelpCircle} label="Help & Support" onClick={() => setHelpOpen(true)} />
+          <FooterBtn icon={LogOut} label="Sign Out" onClick={handleLogout} />
         </div>
       </aside>
+
       <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} onOpenTax={() => setTaxOpen(true)} />
       <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
