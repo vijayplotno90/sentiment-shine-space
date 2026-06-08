@@ -430,6 +430,8 @@ export function clearStore() {
   db = emptyDB();
   loaded = false;
   currentUserId = null;
+  currentRole = null;
+  currentOrgId = null;
   commit();
 }
 
