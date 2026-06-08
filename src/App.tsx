@@ -30,13 +30,15 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/" element={<Index />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/developers" element={<Developers />} />
-              <Route path="/meetings" element={<Meetings />} />
+              <Route path="/" element={<RoleRoute allow={["owner", "admin"]}><Index /></RoleRoute>} />
+              <Route path="/clients" element={<RoleRoute allow={["owner", "admin"]}><Clients /></RoleRoute>} />
+              <Route path="/developers" element={<RoleRoute allow={["owner", "admin"]}><Developers /></RoleRoute>} />
+              <Route path="/meetings" element={<RoleRoute allow={["owner", "admin"]}><Meetings /></RoleRoute>} />
               <Route path="/billing" element={<Billing />} />
-              <Route path="/finance" element={<Finance />} />
-              <Route path="/reports" element={<Reports />} />
+              <Route path="/finance" element={<RoleRoute allow={["owner", "admin"]}><Finance /></RoleRoute>} />
+              <Route path="/reports" element={<RoleRoute allow={["owner", "admin"]}><Reports /></RoleRoute>} />
+              <Route path="/team" element={<RoleRoute allow={["owner"]}><Team /></RoleRoute>} />
+
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
