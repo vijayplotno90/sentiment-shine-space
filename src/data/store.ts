@@ -349,8 +349,31 @@ const payFromRow = (r: Row): Payment => ({ id: r.id as string, invoice: (r.invoi
 export async function loadStore(): Promise<void> {
   const { data: auth } = await supabase.auth.getUser();
   const user = auth?.user;
-  if (!user) { db = emptyDB(); loaded = false; currentUserId = null; commit(); return; }
+  if (!user) { db = emptyDB(); loaded = false; currentUserId = null; currentOrgId = null; currentRole = null; membershipStatus = "unknown"; commit(); return; }
   currentUserId = user.id;
+
+  // Accept any pending invitations for this email (links existing users to their org).
+  await supabase.rpc("accept_pending_invitations");
+
+  // Resolve organization membership + role.
+  const { data: mem } = await supabase
+    .from("organization_members")
+    .select("organization_id, role, status")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .order("created_at")
+    .limit(1)
+    .maybeSingle();
+
+  if (!mem) {
+    // User has no active membership (removed/deactivated). Block access.
+    currentOrgId = null; currentRole = null; membershipStatus = "none";
+    db = emptyDB(); loaded = true; commit();
+    return;
+  }
+  currentOrgId = mem.organization_id as string;
+  currentRole = mem.role as Role;
+  membershipStatus = "active";
 
   const [clientsR, devsR, projsR, meetsR, invsR, linesR, recsR, expsR, paysR, taxR, profR] = await Promise.all([
     supabase.from("clients").select("*").order("created_at"),
@@ -362,15 +385,17 @@ export async function loadStore(): Promise<void> {
     supabase.from("receipts").select("*").order("created_at"),
     supabase.from("expenses").select("*").order("created_at"),
     supabase.from("payments").select("*").order("created_at"),
-    supabase.from("tax_settings").select("*").maybeSingle(),
+    supabase.from("tax_settings").select("*").limit(1).maybeSingle(),
     supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
   ]);
 
+  // Only an owner seeds a brand-new empty organization.
   const noData = !(clientsR.data?.length || devsR.data?.length || invsR.data?.length || expsR.data?.length);
-  if (noData) {
+  if (noData && currentRole === "owner") {
     await seedDemoData();
     return loadStore();
   }
+
 
   const lines = (linesR.data || []) as Row[];
   db.clients = (clientsR.data || []).map(clientFromRow as (r: Row) => Client);
