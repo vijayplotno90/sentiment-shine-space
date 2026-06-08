@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle, BarChart3, LogOut } from "lucide-react";
+import { Home, Users, Code2, Calendar, Wallet, FileText, Settings, HelpCircle, BarChart3, LogOut, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useProfile } from "@/data/store";
+import { useProfile, useOrgRole, canAccessTab, isOwner } from "@/data/store";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ProfileDialog } from "@/components/dialogs/ProfileDialog";
@@ -19,15 +19,20 @@ const nav = [
   { to: "/billing", label: "Billing", icon: FileText },
   { to: "/finance", label: "Finance", icon: Wallet },
   { to: "/reports", label: "Reports", icon: BarChart3 },
+  { to: "/team", label: "Team & Access", icon: Shield },
 ];
 
 export const AppSidebar = () => {
   const navigate = useNavigate();
   const profile = useProfile();
+  useOrgRole(); // subscribe so nav re-filters when the role loads
   const [profileOpen, setProfileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [taxOpen, setTaxOpen] = useState(false);
+
+  // Show only the tabs this role is allowed to access (role drives canAccessTab).
+  const visibleNav = nav.filter((item) => canAccessTab(item.to));
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -53,7 +58,7 @@ export const AppSidebar = () => {
           </div>
         </div>
         <nav className="flex-1 px-3 py-2 space-y-1">
-          {nav.map((item) => {
+          {visibleNav.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink key={item.to} to={item.to} end={item.end}

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { RoleRoute } from "@/components/RoleRoute";
 import AppLayout from "./layouts/AppLayout";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
@@ -14,6 +15,7 @@ import Meetings from "./pages/Meetings";
 import Finance from "./pages/Finance";
 import Billing from "./pages/Billing";
 import Reports from "./pages/Reports";
+import Team from "./pages/Team";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,13 +30,14 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/" element={<Index />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/developers" element={<Developers />} />
-              <Route path="/meetings" element={<Meetings />} />
-              <Route path="/billing" element={<Billing />} />
-              <Route path="/finance" element={<Finance />} />
-              <Route path="/reports" element={<Reports />} />
+              <Route path="/" element={<RoleRoute><Index /></RoleRoute>} />
+              <Route path="/clients" element={<RoleRoute><Clients /></RoleRoute>} />
+              <Route path="/developers" element={<RoleRoute><Developers /></RoleRoute>} />
+              <Route path="/meetings" element={<RoleRoute><Meetings /></RoleRoute>} />
+              <Route path="/billing" element={<RoleRoute><Billing /></RoleRoute>} />
+              <Route path="/finance" element={<RoleRoute><Finance /></RoleRoute>} />
+              <Route path="/reports" element={<RoleRoute><Reports /></RoleRoute>} />
+              <Route path="/team" element={<RoleRoute><Team /></RoleRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

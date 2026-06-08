@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, FileText, Settings, Plus, Trash2, Mail } from "lucide-react";
-import { useInvoices, useExpenses, useDevelopers, useClients, useTaxSettings, updateInvoice, deleteExpense } from "@/data/store";
+import { useInvoices, useExpenses, useDevelopers, useClients, useTaxSettings, updateInvoice, deleteExpense, useCanWrite } from "@/data/store";
 import { TaxSettingsDialog } from "@/components/dialogs/TaxSettingsDialog";
 import { AddExpenseDialog } from "@/components/dialogs/AddExpenseDialog";
 import { ExportGstDialog } from "@/components/dialogs/ExportGstDialog";
@@ -18,6 +18,7 @@ const Finance = () => {
   const developers = useDevelopers();
   const clients = useClients();
   const tax = useTaxSettings();
+  const canWrite = useCanWrite();
   const [taxOpen, setTaxOpen] = useState(false);
   const [expOpen, setExpOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -56,8 +57,8 @@ const Finance = () => {
       <PageHeader title="Financial Management" subtitle="Revenue, expenses, GST and CA-ready reports"
         action={
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={() => setTaxOpen(true)}><Settings className="h-4 w-4" />Tax Settings</Button>
-            <Link to="/billing"><Button variant="outline"><FileText className="h-4 w-4" />Generate Invoice</Button></Link>
+            {canWrite && <Button variant="outline" onClick={() => setTaxOpen(true)}><Settings className="h-4 w-4" />Tax Settings</Button>}
+            {canWrite && <Link to="/billing"><Button variant="outline"><FileText className="h-4 w-4" />Generate Invoice</Button></Link>}
             <Button onClick={() => openExport("download")}>Export GST</Button>
           </div>
         } />
@@ -90,8 +91,8 @@ const Finance = () => {
                 </div>
                 <div className="text-right"><div className="text-2xl font-bold text-emerald-600">{inr(inv.total)}</div><div className="text-xs text-muted-foreground">GST {inr(inv.gstAmount)}</div></div>
                 <div className="flex gap-2">
-                  {inv.status !== "paid" && <Button size="sm" variant="outline" onClick={() => toast.success("Reminder sent")}>Send Reminder</Button>}
-                  {inv.status !== "paid" && <Button size="sm" onClick={() => { updateInvoice(inv.id, { status: "paid", paidDate: new Date().toISOString().slice(0, 10) }); toast.success("Marked paid"); }}>Mark Paid</Button>}
+                  {canWrite && inv.status !== "paid" && <Button size="sm" variant="outline" onClick={() => toast.success("Reminder sent")}>Send Reminder</Button>}
+                  {canWrite && inv.status !== "paid" && <Button size="sm" onClick={() => { updateInvoice(inv.id, { status: "paid", paidDate: new Date().toISOString().slice(0, 10) }); toast.success("Marked paid"); }}>Mark Paid</Button>}
                 </div>
               </div>
             );
@@ -120,7 +121,7 @@ const Finance = () => {
                 </div>
               ))}
             </div>
-            <Button onClick={() => setExpOpen(true)} className="ml-3"><Plus className="h-4 w-4" />Add Expense</Button>
+            {canWrite && <Button onClick={() => setExpOpen(true)} className="ml-3"><Plus className="h-4 w-4" />Add Expense</Button>}
           </div>
           <div className="bg-card rounded-2xl shadow-card divide-y">
             {expenses.map((e) => (
@@ -132,7 +133,7 @@ const Finance = () => {
                 <Badge variant="secondary" className="capitalize">{e.category}</Badge>
                 {e.isAsset && <Badge className="bg-purple-100 text-purple-700 border-0">Asset {e.assetTag}</Badge>}
                 <div className="text-right"><div className="font-bold">{inr(e.total)}</div><div className="text-xs text-muted-foreground">GST {inr(e.gstAmount)}</div></div>
-                <Button size="icon" variant="ghost" onClick={() => { if (confirm("Delete expense?")) { deleteExpense(e.id); toast.success("Deleted"); } }}><Trash2 className="h-4 w-4" /></Button>
+                {canWrite && <Button size="icon" variant="ghost" onClick={() => { if (confirm("Delete expense?")) { deleteExpense(e.id); toast.success("Deleted"); } }}><Trash2 className="h-4 w-4" /></Button>}
               </div>
             ))}
           </div>

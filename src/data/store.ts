@@ -272,10 +272,28 @@ const emptyDB = (): DB => ({
   tax: defaultTax, profile: { name: "User", email: "", role: "Owner", initials: "U" },
 });
 
+export type OrgRole = "owner" | "admin" | "ca";
+
 let db: DB = emptyDB();
 let loaded = false;
 let currentUserId: string | null = null;
+let currentRole: OrgRole | null = null;
+let currentOrgId: string | null = null;
 const listeners = new Set<() => void>();
+
+export const getRole = (): OrgRole | null => currentRole;
+export const getOrgId = (): string | null => currentOrgId;
+export const canWrite = (): boolean => currentRole === "owner" || currentRole === "admin";
+export const isOwner = (): boolean => currentRole === "owner";
+
+// Which top-level routes each role may access.
+const ROLE_TABS: Record<OrgRole, string[]> = {
+  owner: ["/", "/clients", "/developers", "/meetings", "/billing", "/finance", "/reports", "/team"],
+  admin: ["/", "/clients", "/developers", "/meetings", "/billing", "/finance", "/reports"],
+  ca: ["/billing", "/finance", "/reports"],
+};
+export const allowedTabs = (): string[] => (currentRole ? ROLE_TABS[currentRole] : ROLE_TABS.owner);
+export const canAccessTab = (path: string): boolean => allowedTabs().includes(path);
 
 function commit() { listeners.forEach((l) => l()); }
 
@@ -344,6 +362,21 @@ export async function loadStore(): Promise<void> {
   if (!user) { db = emptyDB(); loaded = false; currentUserId = null; commit(); return; }
   currentUserId = user.id;
 
+  // Determine this user's role + organization within their company.
+  const memR = await supabase
+    .from("organization_members")
+    .select("role, organization_id")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+  if (memR.data) {
+    currentRole = (memR.data.role as OrgRole) ?? null;
+    currentOrgId = (memR.data.organization_id as string) ?? null;
+  } else {
+    currentRole = null;
+    currentOrgId = null;
+  }
+
   const [clientsR, devsR, projsR, meetsR, invsR, linesR, recsR, expsR, paysR, taxR, profR] = await Promise.all([
     supabase.from("clients").select("*").order("created_at"),
     supabase.from("developers").select("*").order("created_at"),
@@ -359,7 +392,9 @@ export async function loadStore(): Promise<void> {
   ]);
 
   const noData = !(clientsR.data?.length || devsR.data?.length || invsR.data?.length || expsR.data?.length);
-  if (noData) {
+  // Only seed demo data for managers (owner/admin). Read-only members (ca) joining a
+  // brand-new org must never trigger writes — they simply see an empty workspace.
+  if (noData && canWrite()) {
     await seedDemoData();
     return loadStore();
   }
@@ -395,6 +430,8 @@ export function clearStore() {
   db = emptyDB();
   loaded = false;
   currentUserId = null;
+  currentRole = null;
+  currentOrgId = null;
   commit();
 }
 
@@ -444,6 +481,23 @@ export const useExpenses = () => useSlice("expenses");
 export const useReceipts = () => useSlice("receipts");
 export const useTaxSettings = () => useSlice("tax");
 export const useProfile = () => useSlice("profile");
+
+// Re-renders when role/org/membership state changes (commit() fires the listeners).
+export const useOrgRole = (): OrgRole | null => {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const fn = () => force((n) => n + 1);
+    listeners.add(fn);
+    return () => { listeners.delete(fn); };
+  }, []);
+  return currentRole;
+};
+
+// True for owner/admin, false for read-only ca. Re-renders when the role loads.
+export const useCanWrite = (): boolean => {
+  const role = useOrgRole();
+  return role === "owner" || role === "admin" || role === null;
+};
 
 // ---------------- Mutations ----------------
 
