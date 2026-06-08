@@ -71,7 +71,7 @@ const Billing = () => {
       <PageHeader
         title="Billing"
         subtitle="Generate, send, and manage tax invoices for your clients"
-        action={<Button onClick={() => { setEditing(undefined); setCreateOpen(true); }}><Plus className="h-4 w-4" /> Create Invoice</Button>}
+        action={canWrite ? <Button onClick={() => { setEditing(undefined); setCreateOpen(true); }}><Plus className="h-4 w-4" /> Create Invoice</Button> : undefined}
       />
 
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
