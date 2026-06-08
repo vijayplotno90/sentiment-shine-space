@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, FileText, Settings, Plus, Trash2, Mail } from "lucide-react";
-import { useInvoices, useExpenses, useDevelopers, useClients, useTaxSettings, updateInvoice, deleteExpense } from "@/data/store";
+import { useInvoices, useExpenses, useDevelopers, useClients, useTaxSettings, updateInvoice, deleteExpense, useCanWrite } from "@/data/store";
 import { TaxSettingsDialog } from "@/components/dialogs/TaxSettingsDialog";
 import { AddExpenseDialog } from "@/components/dialogs/AddExpenseDialog";
 import { ExportGstDialog } from "@/components/dialogs/ExportGstDialog";
