@@ -133,7 +133,7 @@ const Finance = () => {
                 <Badge variant="secondary" className="capitalize">{e.category}</Badge>
                 {e.isAsset && <Badge className="bg-purple-100 text-purple-700 border-0">Asset {e.assetTag}</Badge>}
                 <div className="text-right"><div className="font-bold">{inr(e.total)}</div><div className="text-xs text-muted-foreground">GST {inr(e.gstAmount)}</div></div>
-                <Button size="icon" variant="ghost" onClick={() => { if (confirm("Delete expense?")) { deleteExpense(e.id); toast.success("Deleted"); } }}><Trash2 className="h-4 w-4" /></Button>
+                {canWrite && <Button size="icon" variant="ghost" onClick={() => { if (confirm("Delete expense?")) { deleteExpense(e.id); toast.success("Deleted"); } }}><Trash2 className="h-4 w-4" /></Button>}
               </div>
             ))}
           </div>
