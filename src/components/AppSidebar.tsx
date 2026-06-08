@@ -25,10 +25,14 @@ const nav = [
 export const AppSidebar = () => {
   const navigate = useNavigate();
   const profile = useProfile();
+  const role = useOrgRole();
   const [profileOpen, setProfileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [taxOpen, setTaxOpen] = useState(false);
+
+  // Show only the tabs this role is allowed to access (role drives canAccessTab).
+  const visibleNav = nav.filter((item) => canAccessTab(item.to));
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
