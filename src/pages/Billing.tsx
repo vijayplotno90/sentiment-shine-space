@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Eye, Download, Edit, Trash2, Send, Copy, Receipt as ReceiptIcon } from "lucide-react";
-import { useInvoices, useClients, useTaxSettings, useReceipts, deleteInvoice, updateInvoice, duplicateInvoice, type Invoice } from "@/data/store";
+import { useInvoices, useClients, useTaxSettings, useReceipts, deleteInvoice, updateInvoice, duplicateInvoice, useCanWrite, type Invoice } from "@/data/store";
 import { CreateInvoiceDialog } from "@/components/dialogs/CreateInvoiceDialog";
 import { InvoicePreviewDialog } from "@/components/dialogs/InvoicePreviewDialog";
 import { RecordReceiptDialog } from "@/components/dialogs/RecordReceiptDialog";
