@@ -362,6 +362,21 @@ export async function loadStore(): Promise<void> {
   if (!user) { db = emptyDB(); loaded = false; currentUserId = null; commit(); return; }
   currentUserId = user.id;
 
+  // Determine this user's role + organization within their company.
+  const memR = await supabase
+    .from("organization_members")
+    .select("role, organization_id")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+  if (memR.data) {
+    currentRole = (memR.data.role as OrgRole) ?? null;
+    currentOrgId = (memR.data.organization_id as string) ?? null;
+  } else {
+    currentRole = null;
+    currentOrgId = null;
+  }
+
   const [clientsR, devsR, projsR, meetsR, invsR, linesR, recsR, expsR, paysR, taxR, profR] = await Promise.all([
     supabase.from("clients").select("*").order("created_at"),
     supabase.from("developers").select("*").order("created_at"),
