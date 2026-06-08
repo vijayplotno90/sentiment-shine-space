@@ -57,8 +57,8 @@ const Finance = () => {
       <PageHeader title="Financial Management" subtitle="Revenue, expenses, GST and CA-ready reports"
         action={
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={() => setTaxOpen(true)}><Settings className="h-4 w-4" />Tax Settings</Button>
-            <Link to="/billing"><Button variant="outline"><FileText className="h-4 w-4" />Generate Invoice</Button></Link>
+            {canWrite && <Button variant="outline" onClick={() => setTaxOpen(true)}><Settings className="h-4 w-4" />Tax Settings</Button>}
+            {canWrite && <Link to="/billing"><Button variant="outline"><FileText className="h-4 w-4" />Generate Invoice</Button></Link>}
             <Button onClick={() => openExport("download")}>Export GST</Button>
           </div>
         } />
