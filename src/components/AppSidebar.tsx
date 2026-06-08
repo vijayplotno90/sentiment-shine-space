@@ -60,7 +60,7 @@ export const AppSidebar = () => {
           </div>
         </div>
         <nav className="flex-1 px-3 py-2 space-y-1">
-          {nav.map((item) => {
+          {visibleNav.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink key={item.to} to={item.to} end={item.end}
