@@ -272,10 +272,28 @@ const emptyDB = (): DB => ({
   tax: defaultTax, profile: { name: "User", email: "", role: "Owner", initials: "U" },
 });
 
+export type OrgRole = "owner" | "admin" | "ca";
+
 let db: DB = emptyDB();
 let loaded = false;
 let currentUserId: string | null = null;
+let currentRole: OrgRole | null = null;
+let currentOrgId: string | null = null;
 const listeners = new Set<() => void>();
+
+export const getRole = (): OrgRole | null => currentRole;
+export const getOrgId = (): string | null => currentOrgId;
+export const canWrite = (): boolean => currentRole === "owner" || currentRole === "admin";
+export const isOwner = (): boolean => currentRole === "owner";
+
+// Which top-level routes each role may access.
+const ROLE_TABS: Record<OrgRole, string[]> = {
+  owner: ["/", "/clients", "/developers", "/meetings", "/billing", "/finance", "/reports", "/team"],
+  admin: ["/", "/clients", "/developers", "/meetings", "/billing", "/finance", "/reports"],
+  ca: ["/billing", "/finance", "/reports"],
+};
+export const allowedTabs = (): string[] => (currentRole ? ROLE_TABS[currentRole] : ROLE_TABS.owner);
+export const canAccessTab = (path: string): boolean => allowedTabs().includes(path);
 
 function commit() { listeners.forEach((l) => l()); }
 
