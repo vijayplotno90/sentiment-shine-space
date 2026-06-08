@@ -676,3 +676,71 @@ export const projectsForClient = (clientId: string) => db.projects.filter((p) =>
 export const projectsForDeveloper = (devId: string) => db.projects.filter((p) => p.assignedDeveloperId === devId);
 export const meetingsForClient = (clientId: string) => db.meetings.filter((m) => m.clientId === clientId);
 export const invoicesForClient = (clientId: string) => db.invoices.filter((i) => i.clientId === clientId);
+
+// ---------------- Team management (owner only enforced by RLS) ----------------
+
+export type Member = { id: string; userId: string; email: string; role: Role; status: "active" | "inactive"; name?: string; isYou?: boolean };
+export type Invitation = { id: string; email: string; role: Role; status: string; createdAt?: string };
+
+export async function fetchTeam(): Promise<{ members: Member[]; invitations: Invitation[] }> {
+  if (!currentOrgId) return { members: [], invitations: [] };
+  const [memR, invR] = await Promise.all([
+    supabase.from("organization_members").select("id, user_id, email, role, status, created_at").eq("organization_id", currentOrgId).order("created_at"),
+    supabase.from("organization_invitations").select("id, email, role, status, created_at").eq("organization_id", currentOrgId).eq("status", "pending").order("created_at"),
+  ]);
+  const memberRows = (memR.data || []) as Row[];
+  const userIds = memberRows.map((m) => m.user_id as string);
+  let names: Record<string, string> = {};
+  if (userIds.length) {
+    const { data: profs } = await supabase.from("profiles").select("user_id, name").in("user_id", userIds);
+    (profs || []).forEach((p: any) => { names[p.user_id] = p.name; });
+  }
+  const members: Member[] = memberRows.map((m) => ({
+    id: m.id as string,
+    userId: m.user_id as string,
+    email: (m.email as string) || "",
+    role: m.role as Role,
+    status: (m.status as Member["status"]) || "active",
+    name: names[m.user_id as string],
+    isYou: (m.user_id as string) === currentUserId,
+  }));
+  const invitations: Invitation[] = ((invR.data || []) as Row[]).map((i) => ({
+    id: i.id as string,
+    email: i.email as string,
+    role: i.role as Role,
+    status: i.status as string,
+    createdAt: i.created_at as string,
+  }));
+  return { members, invitations };
+}
+
+export async function inviteMember(email: string, role: Role): Promise<{ error?: string }> {
+  if (!currentOrgId) return { error: "No organization" };
+  const clean = email.trim().toLowerCase();
+  // If they already have an account and were a member before, just reactivate.
+  const { error } = await supabase.from("organization_invitations").upsert(
+    { organization_id: currentOrgId, email: clean, role, status: "pending", invited_by: currentUserId },
+    { onConflict: "organization_id,email" }
+  );
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function setMemberStatus(memberId: string, status: "active" | "inactive"): Promise<{ error?: string }> {
+  const { error } = await supabase.from("organization_members").update({ status }).eq("id", memberId);
+  return error ? { error: error.message } : {};
+}
+
+export async function updateMemberRole(memberId: string, role: Role): Promise<{ error?: string }> {
+  const { error } = await supabase.from("organization_members").update({ role }).eq("id", memberId);
+  return error ? { error: error.message } : {};
+}
+
+export async function revokeInvitation(id: string): Promise<{ error?: string }> {
+  const { error } = await supabase.from("organization_invitations").delete().eq("id", id);
+  return error ? { error: error.message } : {};
+}
+
+export async function reinviteFromEmail(email: string, role: Role): Promise<{ error?: string }> {
+  return inviteMember(email, role);
+}
